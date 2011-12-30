@@ -1,0 +1,5 @@
+Archers are becoming increasing proficient at hitting standard targets in a standard manner. 
+I came up with a new archery competition that is set up like a normal targeting range but with the objective to have the arrow hit the target at the steepest angle possible. 
+Now, future competitors have to know the optimal speed and angle to achieve the best possible final angle while still hitting the target. 
+In order to determine the best way for competitors to win, I constructed an unconstrained rigid body model of an arrow’s flight, taking into account gravity, drag, and lift. 
+I confirmed this model through physical considerations, and then used it to determine which cases give the best result.
