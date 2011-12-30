@@ -1,7 +1,8 @@
-%Function: arrowsuccess
+%Function: arrowsuccess 
 %Inputs: Initial Velocity, Angle of Hit in degrees.
 %Output: Range of the ball.
 %Author: Jaehee Park
+
 function success=arrowsuccess(Vi,Ang)
  
 close all
