@@ -1,3 +1,141 @@
+%Function: arrowsuccess
+%Inputs: Initial Velocity, Angle of Hit in degrees.
+%Output: Range of the ball.
+%Author: Jaehee Park
+function success=arrowsuccess(Vi,Ang)
+ 
+close all
+ 
+%Constants
+a_grav=-9.806;      %Acceleration of Gravity
+cdrag=.0026;        %Drag Constant
+clift=7;           %Lift Constant
+m=.880;             %Mass
+A=.000005;          %Cross-sectional Area
+rho=1.3;            %Air Density
+CtC=.404;           %Length from Center of Mass to Center of Pressure
+l=.8;               %Length of Arrow
+I=m*l^2/12;         %Moment of Inertia
+ 
+%Target Setup
+TargetX=500;
+TargetY=2;
+TargetL=1;
+ 
+%Setting up input to ode45
+W=[0,2,Vi*cos(pi/180*Ang),Vi*sin(pi/180*Ang),Ang,0];
+ 
+%Setting up options for ode45
+options=odeset('Events',@events);
+ 
+%ode45
+[T,Y]=ode45(@trajectory,[0:30/1000:30],W,options);
+ 
+X1=Y(:,1);
+Y1=Y(:,2);
+A1=Y(:,5); 
+ 
+HeightAtTarget=interp1(X1,Y1,TargetX, 'spline');
+if isnan(HeightAtTarget)
+    Hit=0;
+else
+    if HeightAtTarget<(TargetY+TargetL) && HeightAtTarget>(TargetY-TargetL)
+    Hit=1;
+    else 
+    Hit=0;
+    end
+end
+ 
+ 
+ 
+minmax=[min([X1]), max([X1]), min([Y1]), max([Y1])];
+for i=1:length(T)
+    clf;
+    axis(minmax);
+    hold on;
+    axis image
+    draw_func(X1(i),Y1(i),A1(i));
+    drawnow;
+    pause(0.01)
+end
+ 
+    function draw_func(x1,y1,a2)
+        LengthToTip=.1;
+        a1=a2*pi/180;
+        LengthToBack=l-LengthToTip;
+        X2=[x1+LengthToTip*cos(a1)*10,x1-LengthToBack*cos(a1)*10];
+        Y2=[y1+LengthToTip*sin(a1)*10,y1-LengthToBack*sin(a1)*10];
+        %subplot(221);
+        plot(X2,Y2,'b-', 'LineWidth', 2);
+        hold on
+        plot([TargetX;TargetX],[TargetY+TargetL;TargetY-TargetL],'r-', 'LineWidth', 1);
+    end
+ 
+AngleAtTarget=interp1(X1,A1,TargetX, 'spline')
+ 
+if Hit==1
+    success='You have hit the target.';
+    return;
+end
+if Hit==0
+    success='You have not hit the target.';
+    return
+end
+ 
+%Options for ode45
+    function [value,isterminal,direction]=events(t,W)
+        value=W(2);         %Extract the height of the baseball
+        isterminal=1;         %Stop the integration if height crosses
+        direction=-1;         %If it's decreasing
+    end
+ 
+ 
+function res=trajectory(t,W)
+%Function that finds the trajectory of the ball
+P=W(1:2);
+V=W(3:4);
+Angle=W(5);
+ChAngle=W(6);
+ 
+dPdt=V;
+dVdt=acceleration(t,P,V);
+dAngledt=ChAngle;
+dChAngledt=torque(t,P,V,Angle,ChAngle);
+ 
+for i=1:length(t)
+KE=0.5*I+.1^2*W(5);
+end
+plot(t,KE)
+res=[dPdt;dVdt;dAngledt;dChAngledt];
+ 
+    function res=acceleration(t,P,V)
+        %Calculates the acceleration in components
+        drag=-cdrag*A*rho/2;
+        lift=clift*A*rho/2*(V(1)^2+V(2)^2);
+        ratex=drag*V(1)^2/m        ;
+        ratey=(drag*V(2)^2   +a_grav+lift)/m;
+        res=[ratex;ratey];
+    end
+ 
+    function res=torque(t,P,V,Angle,ChAngle)
+        VectorA=[-CtC*cos(Angle*pi/180);-CtC*sin(Angle*pi/180);0];
+        VectorR=[cos(Angle*pi/180);sin(Angle*pi/180);0];
+        drag=-cdrag*A*rho/2*(V(1)^2);
+        lift=clift*A*rho/2*(V(1)^2+V(2)^2);
+        VectorD=drag*-VectorR;
+        VectorL=lift*cross([0;0;1],VectorR);
+        Tau=cross(VectorA,VectorD)+cross(VectorA,VectorL);
+        ThetaDoubleDot=Tau/I;
+        res=ThetaDoubleDot(3);
+    end
+end
+ 
+%Packaging
+res=Y(end,1);
+end
+
+
+
 Archers are becoming increasing proficient at hitting standard targets in a standard manner. 
 I came up with a new archery competition that is set up like a normal targeting range but with the objective to have the arrow hit the target at the steepest angle possible. 
 Now, future competitors have to know the optimal speed and angle to achieve the best possible final angle while still hitting the target. 
